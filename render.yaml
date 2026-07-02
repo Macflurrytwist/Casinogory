@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: casinogory
+    env: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: JWT_SECRET
+        generateValue: true
+      - key: PORT
+        value: 4000
+      - key: DB_PATH
+        value: /app/data/rarity_ledger.db
+    disk:
+      name: casinogory-data
+      mountPath: /app/data
+      sizeGB: 1
