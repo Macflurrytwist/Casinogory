@@ -32,7 +32,9 @@ body{
   margin:0; min-height:100vh; font-family:'Inter',sans-serif; color:var(--cream);
   background:radial-gradient(ellipse at 50% -10%, #241926 0%, transparent 55%), var(--bezel);
   display:flex; justify-content:center; padding:40px 14px 90px;
+  cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='30' height='30' viewBox='0 0 30 30'%3E%3Crect x='9' y='17' width='7' height='10' rx='3' fill='%23241205'/%3E%3Ccircle cx='15' cy='11' r='9' fill='%23b3122f' stroke='%23241205' stroke-width='2'/%3E%3Ccircle cx='12' cy='8' r='2.4' fill='%23ff8a9c'/%3E%3C/svg%3E") 15 11, pointer;
 }
+input[type=text],input[type=email],input[type=password]{cursor:text;}
 .wrap{width:100%; max-width:820px;}
 .topbar{display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:8px;}
 .brandmini{font-family:'Bungee',cursive; font-size:14px; letter-spacing:.05em; color:var(--gold-2);}
@@ -96,11 +98,14 @@ input:focus{outline:2px solid var(--gold);}
 .toggle-link{font-family:'IBM Plex Mono',monospace; font-size:11.5px; color:var(--neon-cyan); cursor:pointer; text-decoration:underline; margin-top:10px; display:inline-block;}
 .error{color:#ff9db0; font-size:12px; font-family:'IBM Plex Mono',monospace; margin:-4px 0 10px;}
 
-/* SLOT MACHINE */
-.reel-row{display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:14px; margin:18px 0;}
+/* SLOT MACHINE — each reel gets its own lever mounted to its right */
+.reel-row{display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:14px; margin:18px 0;}
+.reel-cell{display:flex; flex-direction:column;}
+.reel-pair{display:flex; align-items:center; gap:8px;}
 .reel{
   background:linear-gradient(180deg,#fbf6e9,#ecdfc0); border-radius:8px; border:3px solid #241205;
   aspect-ratio:2/3; display:flex; flex-direction:column; align-items:center; justify-content:center; position:relative; overflow:hidden;
+  flex:1; min-width:0;
 }
 .reel.locked{filter:grayscale(1) brightness(.6);}
 .reel .strip{font-family:'IBM Plex Mono',monospace; font-size:46px; font-weight:700; color:var(--ink);}
@@ -111,15 +116,17 @@ input:focus{outline:2px solid var(--gold);}
 .reel .doneflag{position:absolute; top:6px; right:6px; font-size:9px; font-family:'IBM Plex Mono',monospace; background:var(--seal); color:#fff; padding:2px 5px; border-radius:3px;}
 .reel-playbtn{width:100%; margin-top:8px;}
 
-.lever-area{display:flex; align-items:center; justify-content:center; gap:18px; margin-top:10px;}
-.lever-track{width:20px; height:110px; background:#241205; border-radius:10px; position:relative;}
+.lever-col{display:flex; flex-direction:column; align-items:center; gap:6px; flex:0 0 auto;}
+.lever-track{width:16px; height:88px; background:#241205; border-radius:8px; position:relative;}
 .lever-knob{
-  width:34px; height:34px; border-radius:50%; background:radial-gradient(circle at 35% 30%, #ff8a9c, #b3122f);
-  position:absolute; left:50%; transform:translateX(-50%); top:0; box-shadow:0 4px 8px rgba(0,0,0,.5); cursor:pointer;
-  transition:top .25s cubic-bezier(.34,1.56,.64,1);
+  width:28px; height:28px; border-radius:50%; background:radial-gradient(circle at 35% 30%, #ff8a9c, #b3122f);
+  position:absolute; left:50%; transform:translateX(-50%); top:0; box-shadow:0 4px 8px rgba(0,0,0,.5); cursor:grab;
+  transition:top .25s cubic-bezier(.34,1.56,.64,1); touch-action:none;
 }
-.lever-knob.pulled{top:76px;}
-.lever-label{font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--gold-2); text-align:center;}
+.lever-knob:active{cursor:grabbing;}
+.lever-knob.pulled{top:60px;}
+.lever-knob.dragging{transition:none;}
+.lever-label{font-family:'IBM Plex Mono',monospace; font-size:8.5px; letter-spacing:.04em; text-transform:uppercase; color:var(--gold-2); text-align:center; max-width:60px; line-height:1.3;}
 
 /* CATEGORY GRID */
 .cat-status{font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:var(--gold-2); margin-bottom:12px;}
@@ -169,6 +176,18 @@ input:focus{outline:2px solid var(--gold);}
 .total-block .label{font-family:'Fraunces',serif; font-size:17px; font-weight:700; color:var(--cream);}
 .total-block .value{font-family:'IBM Plex Mono',monospace; font-size:32px; font-weight:700; color:var(--gold-2);}
 .bonus-line{font-family:'IBM Plex Mono',monospace; font-size:11px; color:#c9a6ad; margin-top:5px; text-align:right;}
+
+/* SHARE */
+.share-block{margin-top:20px; padding-top:16px; border-top:1px dashed #6b3040; text-align:center;}
+.share-label{font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--gold-2); margin-bottom:10px;}
+.share-row{display:flex; gap:10px; justify-content:center; flex-wrap:wrap;}
+.share-btn{display:inline-flex; align-items:center; justify-content:center; gap:7px; border-width:1px; border-style:solid; min-width:150px;}
+.share-fb{background:#1877f2; border-color:#0d5dc7; color:#fff;}
+.share-wa{background:#25d366; border-color:#1ea952; color:#042b12;}
+
+/* RESULTS SCREEN ACTIONS — centered, equal-width, lines up with the share row above it */
+.results-actions{display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-top:16px;}
+.results-actions .btn{min-width:150px;}
 
 /* STATS */
 .streak-hero{text-align:center; padding:16px; margin-bottom:16px;}
@@ -574,11 +593,19 @@ async function callLeaderboard(params){
 /* ============================================================
    STATE + RENDER
    ============================================================ */
+function freshLeverState(){
+  return {
+    4:{revealed:false, spinning:false, strength:null},
+    5:{revealed:false, spinning:false, strength:null},
+    6:{revealed:false, spinning:false, strength:null},
+    7:{revealed:false, spinning:false, strength:null}
+  };
+}
 let state = {
   screen:"auth", authMode:"login",
   user:null, streak:null,
   dailyStatus:null,
-  reelsRevealed:false, leverPulled:false,
+  lever: freshLeverState(), // each reel (4/5/6/7) has its own independent lever
   activeWordLength:null, activeWord:null, activeWordRarity:null,
   categories20:[], selectedCats:[], answers:{}, slangContext:null,
   results:null, statsData:null,
@@ -625,6 +652,8 @@ function render(){
   else if(state.screen==="results") app.innerHTML = viewResults();
   else if(state.screen==="stats") app.innerHTML = viewStats();
   else if(state.screen==="leaderboard") app.innerHTML = viewLeaderboard();
+
+  if(state.screen==="machine") attachLeverDrags();
 }
 
 /* ---------- AUTH ---------- */
@@ -682,14 +711,13 @@ function viewMachine(){
   const reels = lengths.map(len=>{
     const available = state.dailyStatus.availableLengths.includes(len);
     const submitted = state.dailyStatus.submittedLengths.includes(len);
-    const revealed = state.reelsRevealed;
+    const lv = state.lever[len];
+    const revealed = lv.revealed;
     let inner;
-    if(!available && !revealed){
+    if(!available){
       inner = `<div class="padlock">🔒</div><div class="taglabel">7-day streak</div>`;
     } else if(!revealed){
       inner = `<div class="strip">?</div>`;
-    } else if(!available){
-      inner = `<div class="padlock">🔒</div><div class="taglabel">Streak locked</div>`;
     } else {
       inner = `<div class="strip">${len}</div><div class="taglabel">Letters</div>`;
     }
@@ -697,35 +725,116 @@ function viewMachine(){
       <button class="btn reel-playbtn" ${submitted?'disabled':''} onclick="playLength(${len})">
         ${submitted? "Played Today" : "Play"}
       </button>` : "";
+    const leverHtml = (available && !revealed) ? `
+      <div class="lever-col">
+        <div class="lever-track" id="leverTrack-${len}">
+          <div class="lever-knob" id="leverKnob-${len}" data-length="${len}"></div>
+        </div>
+        <div class="lever-label">${leverLabel(len)}</div>
+      </div>` : "";
     return `
-      <div class="reel ${!available?'locked':''} ${state.spinningNow?'spinning':''}">
-        ${submitted? '<div class="doneflag">DONE</div>':''}
-        ${inner}
+      <div class="reel-cell">
+        <div class="reel-pair">
+          <div class="reel ${!available?'locked':''} ${lv.spinning?'spinning':''}">
+            ${submitted? '<div class="doneflag">DONE</div>':''}
+            ${inner}
+          </div>
+          ${leverHtml}
+        </div>
+        ${playBtn}
       </div>
-      ${playBtn}
     `;
   }).join("");
 
   return `
-    <h2>Pull to Reveal Today's Words</h2>
-    <p class="sub">One lever, ${lengths.length} reels — 4, 5, 6, and a streak-locked 7-letter reel. Today's arrangement is fixed and identical for every player; the lever just reveals it. One submission per word length, per day.</p>
+    <h2>Pull Each Lever to Reveal Its Word</h2>
+    <p class="sub">${lengths.length} reels, ${lengths.length} levers — 4, 5, 6, and a streak-locked 7-letter reel. Each lever reveals only its own reel; today's arrangement is fixed and identical for every player. One submission per word length, per day.</p>
     <div class="reel-row">${reels}</div>
-    <div class="lever-area">
-      <div class="lever-track">
-        <div class="lever-knob ${state.leverPulled?'pulled':''}" onclick="pullLever()"></div>
-      </div>
-      <div class="lever-label">${state.reelsRevealed? "Revealed — choose a reel to play" : "Pull to reveal"}</div>
-    </div>
   `;
 }
-function pullLever(){
-  if(state.reelsRevealed) return;
-  state.leverPulled = true; state.spinningNow = true;
+function leverLabel(len){
+  const lv = state.lever[len];
+  if(lv.revealed) return "Revealed!";
+  if(lv.spinning){
+    const s = lv.strength||0;
+    if(s>=0.75) return "POWER PULL! 🔥";
+    if(s>=0.4) return "Spinning…";
+    return "Stirring…";
+  }
+  return "Pull";
+}
+/* Drag-to-pull levers: each reel has its own lever, and reveal timing/feel
+   is driven by how far and how fast the player drags that knob down. */
+function attachLeverDrags(){
+  document.querySelectorAll(".lever-knob[data-length]").forEach(knob=>{
+    const len = Number(knob.dataset.length);
+    const lv = state.lever[len];
+    const track = document.getElementById("leverTrack-"+len);
+    if(!lv || !track || lv.revealed) return;
+    attachDragToKnob(knob, track, len);
+  });
+}
+function attachDragToKnob(knob, track, len){
+  const maxTop = track.clientHeight - knob.clientHeight; // px of travel
+  let dragging=false, startY=0, startTop=0, lastY=0, lastT=0, velocity=0;
+  const pointerY = e => (e.touches ? e.touches[0].clientY : e.clientY);
+
+  function onDown(e){
+    if(state.lever[len].revealed) return;
+    dragging = true;
+    startY = pointerY(e);
+    startTop = parseFloat(knob.style.top) || 0;
+    lastY = startY; lastT = performance.now(); velocity = 0;
+    knob.classList.add("dragging");
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onUp);
+    document.addEventListener("touchmove", onMove, {passive:false});
+    document.addEventListener("touchend", onUp);
+    e.preventDefault();
+  }
+  function onMove(e){
+    if(!dragging) return;
+    const y = pointerY(e);
+    const now = performance.now();
+    const dt = now - lastT;
+    if(dt > 0) velocity = (y - lastY) / dt; // px/ms, +down
+    lastY = y; lastT = now;
+    const newTop = Math.max(0, Math.min(maxTop, startTop + (y - startY)));
+    knob.style.top = newTop + "px";
+    e.preventDefault();
+  }
+  function onUp(){
+    if(!dragging) return;
+    dragging = false;
+    document.removeEventListener("mousemove", onMove);
+    document.removeEventListener("mouseup", onUp);
+    document.removeEventListener("touchmove", onMove);
+    document.removeEventListener("touchend", onUp);
+    knob.classList.remove("dragging");
+    const traveled = parseFloat(knob.style.top) || 0;
+    const distanceFrac = maxTop > 0 ? traveled / maxTop : 0;
+    const speedFrac = Math.min(1, Math.abs(velocity) * 3);
+    // A short sharp flick counts as much as a slow full pull to the bottom.
+    const strength = distanceFrac < 0.05
+      ? 0.25 // a plain tap/click still works, but registers as a weak pull
+      : Math.min(1, Math.max(distanceFrac, distanceFrac*0.5 + speedFrac*0.5));
+    knob.style.top = maxTop + "px";
+    pullLever(len, strength);
+  }
+  knob.addEventListener("mousedown", onDown);
+  knob.addEventListener("touchstart", onDown, {passive:false});
+}
+function pullLever(len, strength){
+  const lv = state.lever[len];
+  if(!lv || lv.revealed) return;
+  strength = Math.max(0.15, Math.min(1, strength==null?1:strength));
+  lv.spinning = true; lv.strength = strength;
   render();
+  const revealDelay = Math.round(1500 - strength*950); // harder pull = snappier reveal
   setTimeout(()=>{
-    state.spinningNow = false; state.reelsRevealed = true;
+    lv.spinning = false; lv.revealed = true;
     render();
-  }, 900);
+  }, revealDelay);
 }
 async function playLength(len){
   try{
@@ -802,7 +911,7 @@ async function swapCat(id){
 }
 function backToMachine(){
   clearTimerInterval();
-  state.reelsRevealed=false; state.leverPulled=false; state.screen="machine"; render(); loadStatus();
+  state.lever = freshLeverState(); state.screen="machine"; render(); loadStatus();
 }
 async function goToAnswers(){
   if(state.selectedCats.length!==10) return;
@@ -919,12 +1028,32 @@ function viewResults(){
     ${rowsHtml}
     <div class="total-block"><div class="label">${state.user.name}'s Total</div><div class="value">${r.finalTotal}</div></div>
     <div class="bonus-line">Category points ${r.categoryPoints} + Word-of-day bonus ${r.wordBonus}${r.doubleBonus?" (doubled — Legendary perk active)":""}</div>
-    <div class="btn-row">
+    <div class="share-block">
+      <div class="share-label">Share today's score</div>
+      <div class="share-row">
+        <button class="btn share-btn share-fb" onclick="shareScore('facebook')">📘 Facebook</button>
+        <button class="btn share-btn share-wa" onclick="shareScore('whatsapp')">💬 WhatsApp</button>
+      </div>
+    </div>
+    <div class="results-actions">
       <button class="btn ghost" onclick="backToMachine()">Back to Machine</button>
       <button class="btn" onclick="goStats()">View Stats</button>
     </div>
     <div class="note"><b>On scoring:</b> Daily points come from a same-day rarity heuristic; Historic points come from ${backendReachable? "a live Google Ngram lookup (2000–2019 average frequency)" : "a simulated stand-in for that same lookup — connect the real backend for live corpus data"}; the Slang Bonus rewards answers that match a curated regional-lingo term.</div>
   `;
+}
+function shareScore(platform){
+  const r = state.results;
+  if(!r) return;
+  const text = `I scored ${r.finalTotal} points on today's CASINOGORY (${state.activeWordLength}-letter word "${r.word}")! Think you can beat me?`;
+  const url = location.href.split(/[?#]/)[0];
+  let shareUrl;
+  if(platform==="facebook"){
+    shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}&quote=${encodeURIComponent(text)}`;
+  } else if(platform==="whatsapp"){
+    shareUrl = `https://wa.me/?text=${encodeURIComponent(text+" "+url)}`;
+  } else return;
+  window.open(shareUrl, "_blank", "noopener,noreferrer,width=600,height=520");
 }
 
 /* ---------- STATS ---------- */
