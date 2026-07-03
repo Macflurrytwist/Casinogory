@@ -160,7 +160,12 @@ input:focus{outline:2px solid var(--gold);}
 .timer-display.urgent{color:#ff6b7a; border-color:#ff6b7a; animation:pulse-urgent .6s infinite;}
 @keyframes pulse-urgent{0%,100%{opacity:1;}50%{opacity:.5;}}
 .answer-row{margin-bottom:12px;}
-.answer-row .cat-label{font-family:'IBM Plex Mono',monospace; font-size:10.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--gold-2); margin-bottom:4px;}
+.answer-row .cat-label{
+  display:flex; align-items:center; justify-content:space-between; gap:8px;
+  font-family:'IBM Plex Mono',monospace; font-size:10.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--gold-2); margin-bottom:4px;
+}
+.answer-row .cat-label .swap{font-size:10.5px; letter-spacing:.06em; opacity:.65; cursor:pointer; white-space:nowrap;}
+.answer-row .cat-label .swap:hover{opacity:1; color:var(--neon-cyan);}
 
 /* RESULTS */
 .ledger-row{padding:11px 0; border-bottom:1px dashed #6b3040;}
@@ -610,8 +615,10 @@ let state = {
   categories20:[], selectedCats:[], answers:{}, slangContext:null,
   results:null, statsData:null,
   timeLimitSeconds:null, timeRemaining:null, timerInterval:null,
+  catTimeRemaining:null, catTimerInterval:null,
   leaderboardData:null, leaderboardParams:{scope:"today", metric:"daily", wordLength:"all"},
 };
+const CATEGORY_SELECT_SECONDS = 60;
 
 function borderClass(perks){
   perks = perks||[];
@@ -846,7 +853,9 @@ async function playLength(len){
     state.slangContext = data.slangContext;
     state.selectedCats = [];
     state.screen = "categories";
+    state.catTimeRemaining = CATEGORY_SELECT_SECONDS;
     render();
+    startCatTimerInterval();
   }catch(e){
     alert((e && e.message) || "Couldn't spin that reel.");
   }
@@ -881,10 +890,15 @@ function viewCategories(){
       </div>`;
   }).join("");
   const n = state.selectedCats.length;
+  const m = Math.floor((state.catTimeRemaining??CATEGORY_SELECT_SECONDS)/60), s = (state.catTimeRemaining??CATEGORY_SELECT_SECONDS)%60;
   return `
     ${wordBannerHtml()}
     <h2>Choose Ten Categories — Knowing the Word</h2>
-    <p class="sub">The word is already on the table. That's the gamble: every category you lock in now, you're betting you can connect it back to <b>${state.activeWord}</b> before the clock runs out. Pick 10 of these 20, pulled from a background bank of 118. Didn't get a category that fits? Tap ⟳ to swap it for another.</p>
+    <div class="timer-bar">
+      <span class="timer-label">Time to Choose</span>
+      <span class="timer-display" id="catTimerDisplay">${m}:${String(s).padStart(2,'0')}</span>
+    </div>
+    <p class="sub">The word is already on the table. That's the gamble: every category you lock in now, you're betting you can connect it back to <b>${state.activeWord}</b> before the clock runs out. Pick 10 of these 20, pulled from a background bank of 118. Didn't get a category that fits? Tap ⟳ to swap it for another — swap as many times as you need, there's no limit. Time runs out? Whatever you haven't picked yet gets filled in automatically so the round keeps moving.</p>
     <div class="cat-status">Selected <b>${n} / 10</b></div>
     <div class="cat-grid">${chips}</div>
     <div class="btn-row">
@@ -911,10 +925,12 @@ async function swapCat(id){
 }
 function backToMachine(){
   clearTimerInterval();
+  clearCatTimerInterval();
   state.lever = freshLeverState(); state.screen="machine"; render(); loadStatus();
 }
 async function goToAnswers(){
   if(state.selectedCats.length!==10) return;
+  clearCatTimerInterval();
   state.answers = {};
   state.selectedCats.forEach(id=>{ state.answers[id]=""; });
   const chosen = state.selectedCats.map(id => state.categories20.find(c=>c.id===id));
@@ -952,6 +968,38 @@ function updateTimerDisplay(){
   el.textContent = `${m}:${String(s).padStart(2,'0')}`;
   el.classList.toggle("urgent", state.timeRemaining <= 15);
 }
+/* ---------- CATEGORY-SELECTION TIMER ---------- */
+function clearCatTimerInterval(){
+  if(state.catTimerInterval){ clearInterval(state.catTimerInterval); state.catTimerInterval=null; }
+}
+function startCatTimerInterval(){
+  clearCatTimerInterval();
+  state.catTimerInterval = setInterval(()=>{
+    state.catTimeRemaining -= 1;
+    if(state.catTimeRemaining <= 0){
+      state.catTimeRemaining = 0;
+      clearCatTimerInterval();
+      autoLockCategories(); // time's up — fill any remaining picks and move on
+      return;
+    }
+    updateCatTimerDisplay();
+  }, 1000);
+}
+function updateCatTimerDisplay(){
+  const el = document.getElementById("catTimerDisplay");
+  if(!el) return;
+  const m = Math.floor(state.catTimeRemaining/60), s = state.catTimeRemaining%60;
+  el.textContent = `${m}:${String(s).padStart(2,'0')}`;
+  el.classList.toggle("urgent", state.catTimeRemaining <= 10);
+}
+function autoLockCategories(){
+  if(state.selectedCats.length < 10){
+    const unpicked = state.categories20.map(c=>c.id).filter(id=>!state.selectedCats.includes(id));
+    const need = 10 - state.selectedCats.length;
+    state.selectedCats = state.selectedCats.concat(unpicked.slice(0, need));
+  }
+  goToAnswers();
+}
 
 /* ---------- ANSWERS ---------- */
 function viewAnswers(){
@@ -959,7 +1007,10 @@ function viewAnswers(){
     const cat = state.categories20.find(c=>c.id===id);
     return `
       <div class="answer-row">
-        <div class="cat-label">No.${String(i+1).padStart(2,'0')} — ${cat.name}</div>
+        <div class="cat-label">
+          <span>No.${String(i+1).padStart(2,'0')} — ${cat.name}</span>
+          <span class="swap" title="No answer in mind? Swap this category for another" onclick="swapAnswerCategory('${id}')">⟳ swap</span>
+        </div>
         <input type="text" id="ans-${id}" placeholder="Your ${cat.name} answer, connected to ${state.activeWord}…"
           value="${(state.answers[id]||"").replace(/"/g,'&quot;')}"
           oninput="state.answers['${id}']=this.value">
@@ -976,10 +1027,10 @@ function viewAnswers(){
       <span class="timer-display" id="timerDisplay">${m}:${String(s).padStart(2,'0')}</span>
     </div>
     <h2>Fill the Ledger</h2>
-    <p class="sub">Give an answer connected to <b>${state.activeWord}</b> for each category — a name, reference, object, or association all count. No right or wrong, you're scored on rarity. Unanswered categories score zero when the clock runs out.</p>
+    <p class="sub">Give an answer connected to <b>${state.activeWord}</b> for each category — a name, reference, object, or association all count. No right or wrong, you're scored on rarity. Stuck on one? Tap ⟳ swap to trade it for a fresh category — no limit, and it won't cost you time. Unanswered categories score zero when the clock runs out.</p>
     ${rows}
     <div class="btn-row">
-      <button class="btn ghost" onclick="clearTimerInterval();state.screen='categories';render();">Back</button>
+      <button class="btn ghost" onclick="backToCategories()">Back</button>
       <button class="btn" onclick="submitAnswers(false)">Seal the Ledger</button>
     </div>
   `;
@@ -1004,6 +1055,33 @@ async function submitAnswers(auto){
   }catch(e){
     alert((e && e.message) || "Couldn't submit — try again.");
   }
+}
+function backToCategories(){
+  clearTimerInterval();
+  state.catTimeRemaining = CATEGORY_SELECT_SECONDS;
+  state.screen = "categories";
+  render();
+  startCatTimerInterval();
+}
+/* Swap a category already locked into the answer round — keeps its
+   position (No.01..No.10) but trades it for an unused category, for
+   when the player has nothing to connect to the current one. Doesn't
+   cost time and can be used as many times as needed. */
+async function swapAnswerCategory(id){
+  const posInSelected = state.selectedCats.indexOf(id);
+  if(posInSelected===-1) return;
+  const posInAll = state.categories20.findIndex(c=>c.id===id);
+  try{
+    const res = await callSwap({wordLength: state.activeWordLength, currentCategories: state.categories20, categoryIdToReplace: id});
+    state.categories20 = res.categories;
+    // swapCategory() replaces in place, so the new category lands at the same index.
+    const newCat = posInAll>-1 ? state.categories20[posInAll] : null;
+    const newId = newCat ? newCat.id : id;
+    state.selectedCats[posInSelected] = newId;
+    delete state.answers[id];
+    if(!(newId in state.answers)) state.answers[newId] = "";
+    render();
+  }catch(e){ alert((e&&e.message)||"Couldn't swap that category."); }
 }
 
 /* ---------- RESULTS ---------- */
