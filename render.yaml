@@ -1,11 +1,54 @@
 services:
+  # Persistent disks require a paid plan — Render's free web services
+  # cannot attach one at all, so this MUST be "starter" (or higher), not
+  # "free", or your database won't actually persist. See backend/README.md
+  # for the full explanation. Starter is currently $7/month.
   - type: web
     name: casinogory
     env: docker
-    plan: free
+    plan: starter
     dockerfilePath: ./Dockerfile
     envVars:
       - key: JWT_SECRET
         generateValue: true
       - key: PORT
         value: 4000
+      - key: DB_PATH
+        value: /app/data/rarity_ledger.db
+      - key: DISCORD_BOT_SHARED_SECRET
+        generateValue: true
+    disk:
+      name: casinogory-data
+      mountPath: /app/data
+      sizeGB: 1
+
+  # Discord bot — a persistent process, not a web service (no public
+  # port needed, just an outbound connection to Discord). Deliberately
+  # left on the free plan: it holds no database and needs no disk, and
+  # as the ONLY free service on the account it comfortably fits under
+  # Render's 750-free-hour/month cap by itself (~720-744 hrs/month for
+  # one always-on service). Do not also put the web service above on
+  # free — running two always-on free services blows past that shared
+  # cap roughly two-thirds of the way through most months.
+  #
+  # After the `casinogory` service above deploys, copy its generated
+  # DISCORD_BOT_SHARED_SECRET value (Render dashboard → casinogory →
+  # Environment) into this service's copy of the same key, and set
+  # GAME_API_BASE to that service's live URL + "/api".
+  - type: worker
+    name: casinogory-discord-bot
+    env: docker
+    plan: free
+    dockerfilePath: ./discord-bot/Dockerfile
+    dockerContext: ./discord-bot
+    envVars:
+      - key: DISCORD_TOKEN
+        sync: false
+      - key: DISCORD_CLIENT_ID
+        sync: false
+      - key: DISCORD_GUILD_ID
+        sync: false
+      - key: GAME_API_BASE
+        sync: false
+      - key: DISCORD_BOT_SHARED_SECRET
+        sync: false

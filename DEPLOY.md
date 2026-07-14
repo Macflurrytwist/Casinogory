@@ -1,8 +1,18 @@
 # Deploying CASINOGORY — Live in ~20 Minutes
 
 This gets the whole app (backend + frontend, one deployment) live at a
-real URL on Render's free tier, using the `render.yaml` and `Dockerfile`
-already in this repo. No code changes needed — just accounts and clicks.
+real URL on Render, using the `render.yaml` and `Dockerfile` already in
+this repo. No code changes needed — just accounts, clicks, and a real
+cost you should know about up front: **the backend runs on Render's
+Starter plan (currently $7/month), not free.** That's not a config
+choice — Render's persistent disks, which is what keeps your database
+(accounts, scores, streaks) from being wiped on every restart, simply
+aren't available on free web services at all. Trying to run this on the
+free plan means the game *looks* like it's saving progress and then
+loses it. `render.yaml` is already set to Starter for this reason.
+
+The Discord bot, if you're deploying it too, stays on Render's free
+plan — it holds no database, so it doesn't need a disk.
 
 **Who this is for:** anyone with a terminal, whether that's you or a
 developer you've handed this to. No prior familiarity with the project
@@ -13,7 +23,9 @@ required — every command is copy-pasteable as-is.
 ## 0. Prerequisites (10 minutes, one-time)
 
 - A [GitHub](https://github.com) account (free)
-- A [Render](https://render.com) account (free — sign up with GitHub, it's faster)
+- A [Render](https://render.com) account — sign up with GitHub, it's
+  faster. You'll need a payment method on file once you apply the
+  blueprint below, for the backend's Starter-plan instance.
 - [Git](https://git-scm.com/downloads) installed. Check with:
   ```bash
   git --version
@@ -77,8 +89,10 @@ folder contents in, and commit. Skip straight to step 3.
 
 1. Go to [dashboard.render.com](https://dashboard.render.com) → **New** → **Blueprint**
 2. Connect your GitHub account if prompted, then select the `casinogory` repo
-3. Render reads `render.yaml` automatically and shows one service:
-   `casinogory` (Docker, free plan, 1GB persistent disk). Click **Apply**.
+3. Render reads `render.yaml` automatically and shows two services:
+   `casinogory` (Docker, **Starter plan, $7/month**, 1GB persistent disk —
+   this is what actually keeps the database) and
+   `casinogory-discord-bot` (Docker, free plan, no disk). Click **Apply**.
 4. First build takes 3-5 minutes. When it's done, Render shows a URL like
    `https://casinogory.onrender.com` — that's the live site.
 
@@ -103,13 +117,15 @@ $10-15/year.
 
 ## Things to know before real people use it
 
-- **Free tier sleeps.** Render's free web services spin down after 15
-  minutes idle, so the first visitor after a quiet spell waits ~30-60s
-  for a cold start. Fine for testing/soft launch; upgrade to a paid
-  instance ($7/mo Starter plan) once real traffic matters.
+- **The backend is on Starter, not free, and that's intentional.** No
+  cold starts, no 15-minute spin-down, and — the actual reason —
+  persistent disks (what saves your database) don't exist on Render's
+  free web services at all. The Discord bot service can stay free since
+  it has no database of its own.
 - **JWT_SECRET is auto-generated** by the blueprint — don't need to touch it.
 - **The database is SQLite on a persistent disk** — survives redeploys,
-  fine for real usage at moderate scale. If this ever needs to run on
+  fine for real usage at moderate scale, *as long as the backend stays
+  on a paid plan*. If this ever needs to run on
   more than one server instance, it'll need to move to hosted Postgres
   first (flagged in `backend/README.md`).
 - **The unofficial Ngram/Urban Dictionary lookups** may get rate-limited
