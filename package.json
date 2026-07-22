@@ -1,0 +1,16 @@
+{
+  "name": "casinogory-discord-bot",
+  "version": "1.0.0",
+  "description": "Play CASINOGORY's daily word game directly in Discord — talks to the same backend API as the website.",
+  "main": "index.js",
+  "type": "commonjs",
+  "scripts": {
+    "deploy-commands": "node deploy-commands.js",
+    "start": "node index.js"
+  },
+  "engines": { "node": ">=18" },
+  "dependencies": {
+    "discord.js": "^14.15.3",
+    "dotenv": "^16.4.5"
+  }
+}
